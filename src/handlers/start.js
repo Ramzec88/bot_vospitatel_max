@@ -36,6 +36,28 @@ export async function handleBotStarted(ctx) {
 }
 
 /**
+ * Обработчик команды /start (в том числе /start premium_access из deeplink).
+ */
+export async function handleStartCommand(ctx) {
+  const userId = ctx.user?.user_id;
+  const text = ctx.message?.body?.text ?? '';
+  // text = "/start premium_access" → берём второе слово
+  const parts = text.trim().split(/\s+/);
+  const payload = parts[1];
+
+  console.log('[DEBUG] handleStartCommand userId:', userId, 'payload:', payload);
+
+  if (userId && payload && PAYLOAD_TIERS[payload]) {
+    const newTier = PAYLOAD_TIERS[payload];
+    await setUserTier(userId, newTier, 'max');
+    ctx.tier = newTier;
+    ctx.limit = TIER_LIMITS[newTier];
+  }
+
+  await handleStart(ctx);
+}
+
+/**
  * Обработчик команды /start.
  */
 export async function handleStart(ctx) {

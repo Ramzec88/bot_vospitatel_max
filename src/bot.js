@@ -1,7 +1,7 @@
 import { Bot } from '@maxhub/max-bot-api';
 import { config } from './config.js';
 import { initDatabase } from './database/db.js';
-import { handleStart, handleBotStarted } from './handlers/start.js';
+import { handleStart, handleStartCommand, handleBotStarted } from './handlers/start.js';
 import { handleCallback, handleDescription, handleCancel } from './handlers/generate.js';
 import { handleLimits } from './handlers/limits.js';
 import { handleAnalytics } from './handlers/admin.js';
@@ -12,6 +12,15 @@ await initDatabase();
 
 const bot = new Bot(config.botToken);
 
+// Отладочный лог всех входящих событий (убрать после диагностики)
+bot.use(async (ctx, next) => {
+  console.log('[DEBUG] update_type:', ctx.update?.update_type,
+    '| text:', ctx.message?.body?.text ?? '-',
+    '| startPayload:', ctx.startPayload ?? '-',
+    '| callbackPayload:', ctx.callback?.payload ?? '-');
+  return next();
+});
+
 // Middleware — проверка доступа и установка tier/limit в ctx
 bot.use(checkAccess);
 
@@ -19,7 +28,7 @@ bot.use(checkAccess);
 bot.on('bot_started', handleBotStarted);   // первый запуск / переход по диплинку
 
 // Команды
-bot.command('start',     handleStart);
+bot.command(/^start/,    handleStartCommand);
 bot.command('limits',    handleLimits);
 bot.command('cancel',    handleCancel);
 bot.command('analytics', handleAnalytics);
