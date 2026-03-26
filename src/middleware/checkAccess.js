@@ -5,8 +5,12 @@ export async function checkAccess(ctx, next) {
   const userId = ctx.user?.user_id;
   if (!userId) return next();
 
-  // bot_started пропускаем без проверки — deeplink должен сработать первым
+  // bot_started и /start пропускаем без проверки — deeplink должен сработать первым
   if (ctx.update?.update_type === 'bot_started') {
+    return next();
+  }
+  const msgText = ctx.message?.body?.text ?? '';
+  if (msgText.startsWith('/start')) {
     return next();
   }
 
@@ -25,10 +29,14 @@ export async function checkAccess(ctx, next) {
   ctx.limit = TIER_LIMITS[tier] ?? 0;
 
   if (tier === 'none') {
-    await ctx.reply(
-      '👋 Для доступа к боту подпишитесь на наш канал и нажмите кнопку «Открыть бота» в закреплённом посте.\n\n' +
-        'Если вы уже подписаны — перейдите по ссылке из закреплённого поста ещё раз.',
-    );
+    try {
+      await ctx.reply(
+        '👋 Для доступа к боту подпишитесь на наш канал и нажмите кнопку «Открыть бота» в закреплённом посте.\n\n' +
+          'Если вы уже подписаны — перейдите по ссылке из закреплённого поста ещё раз.',
+      );
+    } catch (err) {
+      console.warn('[checkAccess] Не удалось отправить сообщение:', err?.response?.message ?? err?.message);
+    }
     return; // не вызываем next()
   }
 
