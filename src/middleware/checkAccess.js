@@ -5,6 +5,11 @@ export async function checkAccess(ctx, next) {
   const userId = ctx.user?.user_id;
   if (!userId) return next();
 
+  // bot_started пропускаем без проверки — deeplink должен сработать первым
+  if (ctx.update?.update_type === 'bot_started') {
+    return next();
+  }
+
   // Администраторы — без ограничений
   if (ADMIN_IDS.includes(userId)) {
     ctx.tier = 'admin';
