@@ -1,0 +1,16 @@
+{
+  "name": "pomoshnik-max",
+  "version": "1.0.0",
+  "description": "Помощник воспитателя — бот для платформы MAX",
+  "type": "module",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "node --watch src/bot.js"
+  },
+  "dependencies": {
+    "@maxhub/max-bot-api": "^0.2.2",
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "pg": "^8.11.0"
+  }
+}
