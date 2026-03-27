@@ -178,10 +178,31 @@ export async function handleDescription(ctx) {
     await incrementUsage(userId, session.contentType, 'max');
 
     const remaining = limit === Infinity ? '∞' : limit - used - 1;
-    await ctx.reply(
-      `${result}\n\n─────────────────\n📊 Использовано: ${used + 1}/${limit === Infinity ? '∞' : limit} • Осталось: ${remaining}`,
-      { attachments: [exitKeyboard()] },
-    );
+    const footer = `\n\n─────────────────\n📊 Использовано: ${used + 1}/${limit === Infinity ? '∞' : limit} • Осталось: ${remaining}`;
+
+    // MAX ограничивает сообщение 4000 символами — разбиваем на части
+    const MAX_LEN = 3800;
+    const full = result + footer;
+
+    if (full.length <= MAX_LEN) {
+      await ctx.reply(full, { attachments: [exitKeyboard()] });
+    } else {
+      // Отправляем текст частями, клавиатура — в последней
+      const chunks = [];
+      let remaining_text = result;
+      while (remaining_text.length > MAX_LEN) {
+        let cut = remaining_text.lastIndexOf('\n', MAX_LEN);
+        if (cut < MAX_LEN / 2) cut = MAX_LEN;
+        chunks.push(remaining_text.slice(0, cut));
+        remaining_text = remaining_text.slice(cut).trimStart();
+      }
+      chunks.push(remaining_text);
+
+      for (let i = 0; i < chunks.length - 1; i++) {
+        await ctx.reply(chunks[i]);
+      }
+      await ctx.reply(chunks[chunks.length - 1] + footer, { attachments: [exitKeyboard()] });
+    }
   } catch (err) {
     console.error('Ошибка генерации:', err.message);
     await ctx.reply(
