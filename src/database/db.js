@@ -32,9 +32,12 @@ export async function initDatabase() {
     );
   `);
 
-  // Миграция: добавляем колонку platform, если её нет
+  // Миграция: добавляем колонки, если их нет
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';
+  `);
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
   `);
   await pool.query(`
     ALTER TABLE generations ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';
@@ -59,10 +62,10 @@ export async function getUserTier(userId) {
  */
 export async function setUserTier(userId, tier, platform = 'max') {
   await pool.query(
-    `INSERT INTO users (user_id, tier, platform, updated_at)
-     VALUES ($1, $2, $3, NOW())
+    `INSERT INTO users (user_id, tier, platform)
+     VALUES ($1, $2, $3)
      ON CONFLICT (user_id)
-     DO UPDATE SET tier = $2, updated_at = NOW()`,
+     DO UPDATE SET tier = $2`,
     [userId, tier, platform],
   );
 }
