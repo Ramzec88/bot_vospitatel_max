@@ -12,15 +12,6 @@ await initDatabase();
 
 const bot = new Bot(config.botToken);
 
-// Отладочный лог всех входящих событий (убрать после диагностики)
-bot.use(async (ctx, next) => {
-  console.log('[DEBUG] update_type:', ctx.update?.update_type,
-    '| text:', ctx.message?.body?.text ?? '-',
-    '| startPayload:', ctx.startPayload ?? '-',
-    '| callbackPayload:', ctx.callback?.payload ?? '-');
-  return next();
-});
-
 // Middleware — проверка доступа и установка tier/limit в ctx
 bot.use(checkAccess);
 

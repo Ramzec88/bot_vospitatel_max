@@ -28,5 +28,5 @@ export async function handleAnalytics(ctx) {
     `📅 Генераций в этом месяце: ${stats.genMonth}\n` +
     `По типам (месяц):\n${typeLines}`;
 
-  await ctx.reply(text, { attachments: [exitKeyboard()] });
+  await ctx.reply(text, { attachments: [exitKeyboard()], format: 'markdown' });
 }

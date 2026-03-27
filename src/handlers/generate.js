@@ -147,7 +147,7 @@ export async function handleDescription(ctx) {
 
   if (session.state !== STATES.WAITING_DESCRIPTION) return;
 
-  const description = ctx.message?.body?.text ?? ctx.message?.text;
+  const description = ctx.message?.body?.text;
   if (!description) return;
 
   // Проверяем лимит

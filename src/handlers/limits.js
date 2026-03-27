@@ -24,5 +24,5 @@ export async function handleLimits(ctx) {
     `Использовано в этом месяце: ${used} из ${limitStr}\n` +
     `Осталось: ${remaining}`;
 
-  await ctx.reply(text, { attachments: [exitKeyboard()] });
+  await ctx.reply(text, { attachments: [exitKeyboard()], format: 'markdown' });
 }
