@@ -54,7 +54,7 @@ export async function generateContent({ contentType, ageGroup, groupSize, descri
         Authorization: `Bearer ${config.openrouterApiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://github.com/pomoshnik-max',
-        'X-Title': 'Помощник воспитателя MAX',
+        'X-Title': 'Pomoshnik Vospitatelya MAX',
       },
       timeout: 60_000,
     },
