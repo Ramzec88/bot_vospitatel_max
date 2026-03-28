@@ -1,7 +1,7 @@
 import { generateContent } from '../services/openrouter.js';
 import { getUsageThisMonth, incrementUsage, getBonusGenerations } from '../database/db.js';
 import { questionKeyboard, exitKeyboard, mainMenuKeyboard } from '../utils/keyboard.js';
-import { CONTENT_TYPE_LABELS } from '../config.js';
+import { CONTENT_TYPE_LABELS, CHANNEL_URL, CHANNEL_NAME } from '../config.js';
 
 // FSM: хранилище состояний пользователей в памяти
 // { userId -> { state, contentType, ageGroup, groupSize } }
@@ -104,8 +104,10 @@ export async function handleCallback(ctx) {
       await handleLimits(ctx);
     } else if (cmd === 'help') {
       await ctx.reply(
-        'ℹ️ *Помощник воспитателя*\n\nВыберите тип контента в меню, ответьте на несколько вопросов — и получите готовый материал.\n\n' +
-          '/start — главное меню\n/limits — ваши лимиты\n/cancel — отменить генерацию',
+        `ℹ️ *Помощник воспитателя*\n\nВыберите тип контента в меню, ответьте на несколько вопросов — и получите готовый материал.\n\n` +
+          `/start — главное меню\n/limits — ваши лимиты\n/referral — реферальная ссылка\n/cancel — отменить генерацию\n\n` +
+          `📣 Наш канал с педагогическими материалами:\n${CHANNEL_URL}`,
+        { format: 'markdown' },
       );
     }
     return;

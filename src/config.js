@@ -23,8 +23,12 @@ export const TIER_LIMITS = {
   none: 0,
 };
 
-// Бонус за реферала (генераций)
+// Реферальная программа
 export const REFERRAL_BONUS = 5;
+
+// Канал проекта
+export const CHANNEL_URL = 'https://max.ru/join/q8LXziB0BS363Fp7Ga6Jh7dQvjfg5Pxn3ZW5mdc-mrY';
+export const CHANNEL_NAME = 'Кладовая педагога | Мишка Макс';
 
 // Названия типов контента
 export const CONTENT_TYPE_LABELS = {

@@ -1,14 +1,18 @@
 import { setUserTier, getUserTier, addBonusGenerations, recordReferral } from '../database/db.js';
 import { mainMenuKeyboard } from '../utils/keyboard.js';
-import { TIER_LIMITS, REFERRAL_BONUS } from '../config.js';
+import { TIER_LIMITS, REFERRAL_BONUS, CHANNEL_URL, CHANNEL_NAME } from '../config.js';
 
-const WELCOME_TEXT = `👋 Добро пожаловать в «Помощник воспитателя»!
+const WELCOME_TEXT =
+`👋 Добро пожаловать в «Помощник воспитателя»!
 
 Я помогу вам быстро создать:
 📋 Сценарий мероприятия
 🎵 Методический материал
 🎨 Конспект занятия
 🎮 Описание игры
+
+📣 Подпишитесь на наш канал, чтобы быть в курсе новостей и получать педагогические материалы:
+${CHANNEL_URL}
 
 Выберите тип контента 👇`;
 

@@ -1,4 +1,5 @@
 import { Keyboard } from '@maxhub/max-bot-api';
+import { CHANNEL_URL, CHANNEL_NAME } from '../config.js';
 
 /**
  * Главное меню: выбор типа контента + дополнительные кнопки.
@@ -17,14 +18,14 @@ export function mainMenuKeyboard() {
       Keyboard.button.callback('📊 Мои лимиты', 'cmd:limits'),
       Keyboard.button.callback('ℹ️ Помощь',     'cmd:help'),
     ],
+    [
+      Keyboard.button.link(`📣 ${CHANNEL_NAME}`, CHANNEL_URL),
+    ],
   ]);
 }
 
 /**
  * Клавиатура для вопроса с вариантами ответа.
- * @param {string} questionKey  — ключ вопроса (напр. 'ageGroup')
- * @param {Array<[string, string]>} options — пары [label, value]
- * @param {boolean} skippable   — показывать ли кнопку «Пропустить»
  */
 export function questionKeyboard(questionKey, options, skippable = false) {
   const rows = options.map(([label, value]) => [
@@ -38,10 +39,11 @@ export function questionKeyboard(questionKey, options, skippable = false) {
 }
 
 /**
- * Кнопка возврата в главное меню.
+ * Кнопки возврата в главное меню и подписки на канал.
  */
 export function exitKeyboard() {
   return Keyboard.inlineKeyboard([
     [Keyboard.button.callback('🔙 Главное меню', 'cmd:start')],
+    [Keyboard.button.link(`📣 ${CHANNEL_NAME}`, CHANNEL_URL)],
   ]);
 }

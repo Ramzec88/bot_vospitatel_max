@@ -1,6 +1,6 @@
 import { getUsageThisMonth, getBonusGenerations, getReferralCount } from '../database/db.js';
 import { exitKeyboard } from '../utils/keyboard.js';
-import { TIER_LIMITS, REFERRAL_BONUS, config } from '../config.js';
+import { TIER_LIMITS, REFERRAL_BONUS, CHANNEL_URL, CHANNEL_NAME, config } from '../config.js';
 
 const TIER_NAMES = {
   admin:   '👑 Администратор',
@@ -38,7 +38,8 @@ export async function handleLimits(ctx) {
     `👥 *Реферальная программа*\n` +
     `Приглашайте коллег — за каждого вы получаете *+${REFERRAL_BONUS} генераций* навсегда.\n` +
     `Приглашено: ${referralCount} чел.\n\n` +
-    `Ваша ссылка:\n${referralLink}`;
+    `Ваша реферальная ссылка:\n${referralLink}\n\n` +
+    `📣 *Наш канал*\n${CHANNEL_NAME}\n${CHANNEL_URL}`;
 
   await ctx.reply(text, { attachments: [exitKeyboard()], format: 'markdown' });
 }
