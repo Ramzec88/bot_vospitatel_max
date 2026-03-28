@@ -1,6 +1,6 @@
-import { setUserTier } from '../database/db.js';
+import { setUserTier, getUserTier, addBonusGenerations, recordReferral } from '../database/db.js';
 import { mainMenuKeyboard } from '../utils/keyboard.js';
-import { TIER_LIMITS } from '../config.js';
+import { TIER_LIMITS, REFERRAL_BONUS } from '../config.js';
 
 const WELCOME_TEXT = `👋 Добро пожаловать в «Помощник воспитателя»!
 
@@ -18,47 +18,97 @@ const PAYLOAD_TIERS = {
 };
 
 /**
+ * Обрабатывает реферальный payload вида ref_USERID.
+ * Возвращает true, если реферал засчитан.
+ */
+async function processReferral(ctx, referrerId, newUserId) {
+  if (!referrerId || referrerId === newUserId) return false;
+
+  const currentTier = await getUserTier(newUserId);
+  if (currentTier && currentTier !== 'none') return false; // уже активированный пользователь
+
+  // Устанавливаем free-тариф новому пользователю
+  await setUserTier(newUserId, 'free', 'max');
+
+  // Записываем реферала и начисляем бонус (recordReferral вернёт false при дублировании)
+  const recorded = await recordReferral(referrerId, newUserId);
+  if (!recorded) return false;
+
+  await addBonusGenerations(referrerId, REFERRAL_BONUS);
+
+  // Уведомляем реферера
+  try {
+    await ctx.api.sendMessageToUser(
+      referrerId,
+      `🎉 По вашей реферальной ссылке зарегистрировался новый пользователь!\n\n+${REFERRAL_BONUS} генераций добавлено к вашему балансу.`,
+    );
+  } catch {
+    // реферер мог заблокировать бота — не критично
+  }
+
+  return true;
+}
+
+/**
  * Обработчик события bot_started (первый запуск / переход по диплинку).
  */
 export async function handleBotStarted(ctx) {
   const userId = ctx.user?.user_id;
   const payload = ctx.startPayload;
 
-  if (userId && payload && PAYLOAD_TIERS[payload]) {
-    const newTier = PAYLOAD_TIERS[payload];
-    await setUserTier(userId, newTier, 'max');
-    // Обновляем ctx.tier, если middleware уже установил его
-    ctx.tier = newTier;
-    ctx.limit = TIER_LIMITS[newTier];
+  if (userId && payload) {
+    if (PAYLOAD_TIERS[payload]) {
+      const newTier = PAYLOAD_TIERS[payload];
+      await setUserTier(userId, newTier, 'max');
+      ctx.tier = newTier;
+      ctx.limit = TIER_LIMITS[newTier];
+    } else if (payload.startsWith('ref_')) {
+      const referrerId = parseInt(payload.slice(4), 10);
+      if (!isNaN(referrerId)) {
+        const activated = await processReferral(ctx, referrerId, userId);
+        if (activated) {
+          ctx.tier = 'free';
+          ctx.limit = TIER_LIMITS['free'];
+        }
+      }
+    }
   }
 
   await handleStart(ctx);
 }
 
 /**
- * Обработчик команды /start (в том числе /start premium_access из deeplink).
+ * Обработчик команды /start (в том числе /start payload из deeplink).
  */
 export async function handleStartCommand(ctx) {
   const userId = ctx.user?.user_id;
   const text = ctx.message?.body?.text ?? '';
-  // text = "/start premium_access" → берём второе слово
   const parts = text.trim().split(/\s+/);
   const payload = parts[1];
 
-  console.log('[DEBUG] handleStartCommand userId:', userId, 'payload:', payload);
-
-  if (userId && payload && PAYLOAD_TIERS[payload]) {
-    const newTier = PAYLOAD_TIERS[payload];
-    await setUserTier(userId, newTier, 'max');
-    ctx.tier = newTier;
-    ctx.limit = TIER_LIMITS[newTier];
+  if (userId && payload) {
+    if (PAYLOAD_TIERS[payload]) {
+      const newTier = PAYLOAD_TIERS[payload];
+      await setUserTier(userId, newTier, 'max');
+      ctx.tier = newTier;
+      ctx.limit = TIER_LIMITS[newTier];
+    } else if (payload.startsWith('ref_')) {
+      const referrerId = parseInt(payload.slice(4), 10);
+      if (!isNaN(referrerId)) {
+        const activated = await processReferral(ctx, referrerId, userId);
+        if (activated) {
+          ctx.tier = 'free';
+          ctx.limit = TIER_LIMITS['free'];
+        }
+      }
+    }
   }
 
   await handleStart(ctx);
 }
 
 /**
- * Обработчик команды /start.
+ * Отправляет главное меню.
  */
 export async function handleStart(ctx) {
   await ctx.reply(WELCOME_TEXT, { attachments: [mainMenuKeyboard()] });

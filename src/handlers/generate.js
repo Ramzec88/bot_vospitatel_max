@@ -1,5 +1,5 @@
 import { generateContent } from '../services/openrouter.js';
-import { getUsageThisMonth, incrementUsage } from '../database/db.js';
+import { getUsageThisMonth, incrementUsage, getBonusGenerations } from '../database/db.js';
 import { questionKeyboard, exitKeyboard, mainMenuKeyboard } from '../utils/keyboard.js';
 import { CONTENT_TYPE_LABELS } from '../config.js';
 
@@ -150,9 +150,13 @@ export async function handleDescription(ctx) {
   const description = ctx.message?.body?.text;
   if (!description) return;
 
-  // Проверяем лимит
-  const used = await getUsageThisMonth(userId);
-  const limit = ctx.limit ?? 0;
+  // Проверяем лимит (базовый + бонус от рефералов)
+  const [used, bonus] = await Promise.all([
+    getUsageThisMonth(userId),
+    getBonusGenerations(userId),
+  ]);
+  const baseLimit = ctx.limit ?? 0;
+  const limit = baseLimit === Infinity ? Infinity : baseLimit + bonus;
 
   if (limit !== Infinity && used >= limit) {
     await ctx.reply(

@@ -21,6 +21,7 @@ bot.on('bot_started', handleBotStarted);   // первый запуск / пер
 // Команды
 bot.command(/^start/,    handleStartCommand);
 bot.command('limits',    handleLimits);
+bot.command('referral',  handleLimits); // реферальная ссылка показывается в /limits
 bot.command('cancel',    handleCancel);
 bot.command('analytics', handleAnalytics);
 

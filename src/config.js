@@ -6,6 +6,7 @@ export const config = {
   openrouterModel: process.env.OPENROUTER_MODEL || 'anthropic/claude-3.5-sonnet',
   databaseUrl: process.env.DATABASE_URL,
   port: parseInt(process.env.PORT || '3000', 10),
+  botUsername: process.env.BOT_USERNAME ?? '',
 };
 
 export const ADMIN_IDS = (process.env.ADMIN_IDS || '')
@@ -21,6 +22,9 @@ export const TIER_LIMITS = {
   free: 5,
   none: 0,
 };
+
+// Бонус за реферала (генераций)
+export const REFERRAL_BONUS = 5;
 
 // Названия типов контента
 export const CONTENT_TYPE_LABELS = {

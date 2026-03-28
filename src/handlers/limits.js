@@ -1,6 +1,6 @@
-import { getUsageThisMonth } from '../database/db.js';
+import { getUsageThisMonth, getBonusGenerations, getReferralCount } from '../database/db.js';
 import { exitKeyboard } from '../utils/keyboard.js';
-import { TIER_LIMITS } from '../config.js';
+import { TIER_LIMITS, REFERRAL_BONUS, config } from '../config.js';
 
 const TIER_NAMES = {
   admin:   '👑 Администратор',
@@ -12,17 +12,33 @@ const TIER_NAMES = {
 export async function handleLimits(ctx) {
   const userId = ctx.user?.user_id;
   const tier = ctx.tier ?? 'none';
-  const limit = TIER_LIMITS[tier] ?? 0;
+  const baseLimit = TIER_LIMITS[tier] ?? 0;
 
-  const used = await getUsageThisMonth(userId);
-  const remaining = limit === Infinity ? '∞' : Math.max(0, limit - used);
-  const limitStr = limit === Infinity ? '∞' : String(limit);
+  const [used, bonus, referralCount] = await Promise.all([
+    getUsageThisMonth(userId),
+    getBonusGenerations(userId),
+    getReferralCount(userId),
+  ]);
+
+  const effectiveLimit = baseLimit === Infinity ? Infinity : baseLimit + bonus;
+  const remaining = effectiveLimit === Infinity ? '∞' : Math.max(0, effectiveLimit - used);
+  const limitStr = effectiveLimit === Infinity ? '∞' : String(effectiveLimit);
+
+  const referralLink = config.botUsername
+    ? `https://max.ru/${config.botUsername}?start=ref_${userId}`
+    : '_(добавьте BOT\\_USERNAME в настройки)_';
 
   const text =
     `📊 *Ваши лимиты*\n\n` +
     `Тариф: ${TIER_NAMES[tier] ?? tier}\n` +
+    `Базовый лимит: ${baseLimit === Infinity ? '∞' : baseLimit}\n` +
+    (bonus > 0 ? `Бонус от рефералов: +${bonus}\n` : '') +
     `Использовано в этом месяце: ${used} из ${limitStr}\n` +
-    `Осталось: ${remaining}`;
+    `Осталось: ${remaining}\n\n` +
+    `👥 *Реферальная программа*\n` +
+    `Приглашайте коллег — за каждого вы получаете *+${REFERRAL_BONUS} генераций* навсегда.\n` +
+    `Приглашено: ${referralCount} чел.\n\n` +
+    `Ваша ссылка:\n${referralLink}`;
 
   await ctx.reply(text, { attachments: [exitKeyboard()], format: 'markdown' });
 }

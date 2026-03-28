@@ -32,16 +32,21 @@ export async function initDatabase() {
     );
   `);
 
+  // Таблица рефералов
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS referrals (
+      id SERIAL PRIMARY KEY,
+      referrer_id BIGINT NOT NULL,
+      referred_id BIGINT NOT NULL UNIQUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
   // Миграция: добавляем колонки, если их нет
-  await pool.query(`
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';
-  `);
-  await pool.query(`
-    ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
-  `);
-  await pool.query(`
-    ALTER TABLE generations ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';
-  `);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_generations INT NOT NULL DEFAULT 0;`);
+  await pool.query(`ALTER TABLE generations ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';`);
 
   console.log('✅ База данных инициализирована');
 }
@@ -104,6 +109,52 @@ export async function incrementUsage(userId, contentType, platform = 'max') {
     'INSERT INTO generations (user_id, content_type, platform) VALUES ($1, $2, $3)',
     [userId, contentType, platform],
   );
+}
+
+/**
+ * Возвращает накопленный бонус генераций пользователя.
+ */
+export async function getBonusGenerations(userId) {
+  const { rows } = await pool.query(
+    'SELECT bonus_generations FROM users WHERE user_id = $1',
+    [userId],
+  );
+  return parseInt(rows[0]?.bonus_generations ?? '0', 10);
+}
+
+/**
+ * Добавляет бонусные генерации пользователю.
+ */
+export async function addBonusGenerations(userId, amount) {
+  await pool.query(
+    `UPDATE users SET bonus_generations = bonus_generations + $2 WHERE user_id = $1`,
+    [userId, amount],
+  );
+}
+
+/**
+ * Записывает реферала и возвращает true, если запись прошла успешно.
+ * Возвращает false, если referred_id уже был реферирован.
+ */
+export async function recordReferral(referrerId, referredId) {
+  const { rowCount } = await pool.query(
+    `INSERT INTO referrals (referrer_id, referred_id)
+     VALUES ($1, $2)
+     ON CONFLICT (referred_id) DO NOTHING`,
+    [referrerId, referredId],
+  );
+  return rowCount > 0;
+}
+
+/**
+ * Возвращает количество приглашённых пользователей.
+ */
+export async function getReferralCount(userId) {
+  const { rows } = await pool.query(
+    'SELECT COUNT(*) AS cnt FROM referrals WHERE referrer_id = $1',
+    [userId],
+  );
+  return parseInt(rows[0]?.cnt ?? '0', 10);
 }
 
 /**
