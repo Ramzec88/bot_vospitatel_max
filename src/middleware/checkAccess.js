@@ -1,11 +1,11 @@
 import { ADMIN_IDS, TIER_LIMITS } from '../config.js';
-import { getUserTier, createOrUpdateUser } from '../database/db.js';
+import { getUserTier, setUserTier, createOrUpdateUser } from '../database/db.js';
 
 export async function checkAccess(ctx, next) {
   const userId = ctx.user?.user_id;
   if (!userId) return next();
 
-  // bot_started и /start пропускаем без проверки — deeplink должен сработать первым
+  // bot_started и /start пропускаем — deeplink должен сработать первым
   if (ctx.update?.update_type === 'bot_started') {
     return next();
   }
@@ -24,21 +24,16 @@ export async function checkAccess(ctx, next) {
   // Убеждаемся, что пользователь есть в БД
   await createOrUpdateUser(userId, 'max');
 
-  const tier = (await getUserTier(userId)) ?? 'none';
+  let tier = (await getUserTier(userId)) ?? 'none';
+
+  // Новые пользователи автоматически получают бесплатный тариф
+  if (tier === 'none') {
+    await setUserTier(userId, 'free', 'max');
+    tier = 'free';
+  }
+
   ctx.tier = tier;
   ctx.limit = TIER_LIMITS[tier] ?? 0;
-
-  if (tier === 'none') {
-    try {
-      await ctx.reply(
-        '👋 Для доступа к боту подпишитесь на наш канал и нажмите кнопку «Открыть бота» в закреплённом посте.\n\n' +
-          'Если вы уже подписаны — перейдите по ссылке из закреплённого поста ещё раз.',
-      );
-    } catch (err) {
-      console.warn('[checkAccess] Не удалось отправить сообщение:', err?.response?.message ?? err?.message);
-    }
-    return; // не вызываем next()
-  }
 
   return next();
 }

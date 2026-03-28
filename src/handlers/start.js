@@ -78,6 +78,16 @@ export async function handleBotStarted(ctx) {
     }
   }
 
+  // Если тариф ещё не установлен — автоматически даём бесплатный
+  if (userId && (!ctx.tier || ctx.tier === 'none')) {
+    const currentTier = await getUserTier(userId);
+    if (!currentTier || currentTier === 'none') {
+      await setUserTier(userId, 'free', 'max');
+    }
+    ctx.tier = 'free';
+    ctx.limit = TIER_LIMITS['free'];
+  }
+
   await handleStart(ctx);
 }
 
