@@ -5,8 +5,10 @@ import { exitKeyboard } from '../utils/keyboard.js';
 export async function handleAnalytics(ctx) {
   const userId = ctx.user?.user_id;
 
-  if (!ADMIN_IDS.includes(userId)) {
-    await ctx.reply('⛔ Нет доступа.');
+  console.log(`[admin] userId="${userId}" type=${typeof userId} ADMIN_IDS=${JSON.stringify(ADMIN_IDS)}`);
+
+  if (!ADMIN_IDS.includes(String(userId))) {
+    await ctx.reply(`⛔ Нет доступа. Ваш ID: ${userId}`);
     return;
   }
 

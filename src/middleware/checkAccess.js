@@ -15,7 +15,7 @@ export async function checkAccess(ctx, next) {
   }
 
   // Администраторы — без ограничений
-  if (ADMIN_IDS.includes(userId)) {
+  if (ADMIN_IDS.includes(String(userId))) {
     ctx.tier = 'admin';
     ctx.limit = Infinity;
     return next();
