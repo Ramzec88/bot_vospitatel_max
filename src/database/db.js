@@ -47,6 +47,7 @@ export async function initDatabase() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_generations INT NOT NULL DEFAULT 0;`);
   await pool.query(`ALTER TABLE generations ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';`);
+  await pool.query(`ALTER TABLE generations ADD COLUMN IF NOT EXISTS description TEXT;`);
 
   console.log('✅ База данных инициализирована');
 }
@@ -104,10 +105,10 @@ export async function getUsageThisMonth(userId) {
 /**
  * Записывает новую генерацию.
  */
-export async function incrementUsage(userId, contentType, platform = 'max') {
+export async function incrementUsage(userId, contentType, platform = 'max', description = null) {
   await pool.query(
-    'INSERT INTO generations (user_id, content_type, platform) VALUES ($1, $2, $3)',
-    [userId, contentType, platform],
+    'INSERT INTO generations (user_id, content_type, platform, description) VALUES ($1, $2, $3, $4)',
+    [userId, contentType, platform, description],
   );
 }
 
@@ -162,7 +163,7 @@ export async function getReferralCount(userId) {
  */
 export async function getRecentGenerations(offset = 0, limit = 20) {
   const { rows } = await pool.query(
-    `SELECT g.id, g.user_id, g.content_type, g.created_at,
+    `SELECT g.id, g.user_id, g.content_type, g.description, g.created_at,
             u.tier
      FROM generations g
      LEFT JOIN users u ON u.user_id = g.user_id

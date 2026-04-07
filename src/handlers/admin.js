@@ -76,7 +76,8 @@ export async function handleAdminLogs(ctx, offset) {
   const lines = rows.map((r, i) => {
     const date = new Date(r.created_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
     const type = CONTENT_TYPE_LABELS[r.content_type] ?? r.content_type;
-    return `${offset + i + 1}. [${date}] user ${r.user_id} (${r.tier ?? '?'}) — ${type}`;
+    const desc = r.description ? `\n    💬 ${r.description}` : '';
+    return `${offset + i + 1}. [${date}] user ${r.user_id} (${r.tier ?? '?'}) — ${type}${desc}`;
   });
 
   const text = `📋 *Запросы #${offset + 1}–${offset + rows.length}*\n\n` + lines.join('\n');

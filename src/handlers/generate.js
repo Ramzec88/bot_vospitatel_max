@@ -196,7 +196,7 @@ export async function handleDescription(ctx) {
       description,
     });
 
-    await incrementUsage(userId, session.contentType, 'max');
+    await incrementUsage(userId, session.contentType, 'max', description);
 
     const remaining = limit === Infinity ? '∞' : limit - used - 1;
     const footer = `\n\n─────────────────\n📊 Использовано: ${used + 1}/${limit === Infinity ? '∞' : limit} • Осталось: ${remaining}`;
