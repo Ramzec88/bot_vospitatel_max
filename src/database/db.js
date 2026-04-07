@@ -158,6 +158,23 @@ export async function getReferralCount(userId) {
 }
 
 /**
+ * Возвращает последние генерации для администраторов (пагинация по 20).
+ */
+export async function getRecentGenerations(offset = 0, limit = 20) {
+  const { rows } = await pool.query(
+    `SELECT g.id, g.user_id, g.content_type, g.created_at,
+            u.tier
+     FROM generations g
+     LEFT JOIN users u ON u.user_id = g.user_id
+     WHERE g.platform = 'max'
+     ORDER BY g.created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [limit, offset],
+  );
+  return rows;
+}
+
+/**
  * Возвращает агрегированную статистику для администраторов.
  */
 export async function getAdminStats() {

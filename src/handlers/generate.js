@@ -90,6 +90,21 @@ export async function handleCallback(ctx) {
     return;
   }
 
+  // admin:logs:offset
+  if (data.startsWith('admin:logs:')) {
+    const offset = parseInt(data.split(':')[2] ?? '0', 10);
+    const { handleAdminLogs } = await import('./admin.js');
+    await handleAdminLogs(ctx, offset);
+    return;
+  }
+
+  // admin:stats
+  if (data === 'admin:stats') {
+    const { sendAnalytics } = await import('./admin.js');
+    await sendAnalytics(ctx);
+    return;
+  }
+
   // cmd:*
   if (data.startsWith('cmd:')) {
     const cmd = data.split(':')[1];
