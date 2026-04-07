@@ -12,8 +12,7 @@ export const config = {
 export const ADMIN_IDS = (process.env.ADMIN_IDS || '')
   .split(',')
   .map((id) => id.trim())
-  .filter(Boolean)
-  .map(Number);
+  .filter(Boolean);
 
 // Лимиты генераций в месяц по тарифу
 export const TIER_LIMITS = {
