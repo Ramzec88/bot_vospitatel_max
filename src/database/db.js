@@ -48,19 +48,48 @@ export async function initDatabase() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_generations INT NOT NULL DEFAULT 0;`);
   await pool.query(`ALTER TABLE generations ADD COLUMN IF NOT EXISTS platform TEXT DEFAULT 'telegram';`);
   await pool.query(`ALTER TABLE generations ADD COLUMN IF NOT EXISTS description TEXT;`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS group_expires_at TIMESTAMPTZ DEFAULT NULL;`);
 
   console.log('✅ База данных инициализирована');
 }
 
 /**
- * Возвращает tier пользователя или null, если пользователь не найден.
+ * Возвращает tier пользователя с учётом истечения group-тарифа.
+ * Если group_expires_at истёк — сбрасывает tier на 'free' и возвращает 'free'.
  */
 export async function getUserTier(userId) {
   const { rows } = await pool.query(
-    'SELECT tier FROM users WHERE user_id = $1',
+    'SELECT tier, group_expires_at FROM users WHERE user_id = $1',
     [userId],
   );
-  return rows[0]?.tier ?? null;
+  if (!rows[0]) return null;
+
+  const { tier, group_expires_at } = rows[0];
+
+  if (tier === 'group' && group_expires_at && new Date(group_expires_at) < new Date()) {
+    await pool.query(
+      `UPDATE users SET tier = 'free', group_expires_at = NULL WHERE user_id = $1`,
+      [userId],
+    );
+    return 'free';
+  }
+
+  return tier;
+}
+
+/**
+ * Устанавливает group-тариф с истечением в конце текущего месяца.
+ */
+export async function setGroupTier(userId, platform = 'max') {
+  const now = new Date();
+  const expiresAt = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0));
+  await pool.query(
+    `INSERT INTO users (user_id, tier, platform, group_expires_at)
+     VALUES ($1, 'group', $2, $3)
+     ON CONFLICT (user_id)
+     DO UPDATE SET tier = 'group', group_expires_at = $3`,
+    [userId, platform, expiresAt],
+  );
 }
 
 /**
@@ -156,6 +185,17 @@ export async function getReferralCount(userId) {
     [userId],
   );
   return parseInt(rows[0]?.cnt ?? '0', 10);
+}
+
+/**
+ * Возвращает дату истечения group-тарифа или null.
+ */
+export async function getGroupExpiry(userId) {
+  const { rows } = await pool.query(
+    'SELECT group_expires_at FROM users WHERE user_id = $1',
+    [userId],
+  );
+  return rows[0]?.group_expires_at ?? null;
 }
 
 /**
