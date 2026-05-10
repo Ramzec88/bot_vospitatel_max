@@ -18,6 +18,7 @@ export const ADMIN_IDS = (process.env.ADMIN_IDS || '')
 export const TIER_LIMITS = {
   admin: Infinity,
   premium: 30,
+  group: 15,
   free: 5,
   none: 0,
 };

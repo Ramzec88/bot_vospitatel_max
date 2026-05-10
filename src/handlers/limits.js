@@ -1,10 +1,11 @@
-import { getUsageThisMonth, getBonusGenerations, getReferralCount } from '../database/db.js';
+import { getUsageThisMonth, getBonusGenerations, getReferralCount, getGroupExpiry } from '../database/db.js';
 import { exitKeyboard } from '../utils/keyboard.js';
 import { TIER_LIMITS, REFERRAL_BONUS, CHANNEL_URL, CHANNEL_NAME, config } from '../config.js';
 
 const TIER_NAMES = {
   admin:   '👑 Администратор',
   premium: '⭐ Премиум',
+  group:   '👥 Участник группы',
   free:    '🆓 Базовый',
   none:    '🔒 Нет доступа',
 };
@@ -14,10 +15,11 @@ export async function handleLimits(ctx) {
   const tier = ctx.tier ?? 'none';
   const baseLimit = TIER_LIMITS[tier] ?? 0;
 
-  const [used, bonus, referralCount] = await Promise.all([
+  const [used, bonus, referralCount, groupExpiry] = await Promise.all([
     getUsageThisMonth(userId),
     getBonusGenerations(userId),
     getReferralCount(userId),
+    getGroupExpiry(userId),
   ]);
 
   const effectiveLimit = baseLimit === Infinity ? Infinity : baseLimit + bonus;
@@ -28,9 +30,14 @@ export async function handleLimits(ctx) {
     ? `https://max.ru/${config.botUsername}?start=ref_${userId}`
     : '_(добавьте BOT\\_USERNAME в настройки)_';
 
+  const groupExpiryStr = tier === 'group' && groupExpiry
+    ? `Доступ до: ${new Date(groupExpiry).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}\n`
+    : '';
+
   const text =
     `📊 *Ваши лимиты*\n\n` +
     `Тариф: ${TIER_NAMES[tier] ?? tier}\n` +
+    groupExpiryStr +
     `Базовый лимит: ${baseLimit === Infinity ? '∞' : baseLimit}\n` +
     (bonus > 0 ? `Бонус от рефералов: +${bonus}\n` : '') +
     `Использовано в этом месяце: ${used} из ${limitStr}\n` +

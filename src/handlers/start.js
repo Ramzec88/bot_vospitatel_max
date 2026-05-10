@@ -1,4 +1,4 @@
-import { setUserTier, getUserTier, addBonusGenerations, recordReferral } from '../database/db.js';
+import { setUserTier, setGroupTier, getUserTier, addBonusGenerations, recordReferral } from '../database/db.js';
 import { mainMenuKeyboard } from '../utils/keyboard.js';
 import { TIER_LIMITS, REFERRAL_BONUS, CHANNEL_URL, CHANNEL_NAME } from '../config.js';
 
@@ -20,6 +20,13 @@ const PAYLOAD_TIERS = {
   premium_access: 'premium',
   free_access: 'free',
 };
+
+// Возвращает true если payload вида group_YYYY_MM и месяц совпадает с текущим
+function isValidGroupPayload(payload) {
+  const now = new Date();
+  const expected = `group_${now.getUTCFullYear()}_${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+  return payload === expected;
+}
 
 /**
  * Обрабатывает реферальный payload вида ref_USERID.
@@ -66,6 +73,10 @@ export async function handleBotStarted(ctx) {
       await setUserTier(userId, newTier, 'max');
       ctx.tier = newTier;
       ctx.limit = TIER_LIMITS[newTier];
+    } else if (isValidGroupPayload(payload)) {
+      await setGroupTier(userId, 'max');
+      ctx.tier = 'group';
+      ctx.limit = TIER_LIMITS['group'];
     } else if (payload.startsWith('ref_')) {
       const referrerId = parseInt(payload.slice(4), 10);
       if (!isNaN(referrerId)) {
@@ -106,6 +117,10 @@ export async function handleStartCommand(ctx) {
       await setUserTier(userId, newTier, 'max');
       ctx.tier = newTier;
       ctx.limit = TIER_LIMITS[newTier];
+    } else if (isValidGroupPayload(payload)) {
+      await setGroupTier(userId, 'max');
+      ctx.tier = 'group';
+      ctx.limit = TIER_LIMITS['group'];
     } else if (payload.startsWith('ref_')) {
       const referrerId = parseInt(payload.slice(4), 10);
       if (!isNaN(referrerId)) {
