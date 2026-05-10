@@ -206,9 +206,9 @@ export async function handleDescription(ctx) {
     const full = result + footer;
 
     if (full.length <= MAX_LEN) {
-      await ctx.reply(full, { attachments: [exitKeyboard()] });
+      await ctx.reply(full, { attachments: [exitKeyboard()], format: 'markdown' });
     } else {
-      // Отправляем текст частями, клавиатура — в последней
+      // Разбиваем на части, клавиатура — в последней
       const chunks = [];
       let remaining_text = result;
       while (remaining_text.length > MAX_LEN) {
@@ -219,10 +219,28 @@ export async function handleDescription(ctx) {
       }
       chunks.push(remaining_text);
 
+      console.log(`[generate] splitting into ${chunks.length} chunks for user ${userId}`);
+
       for (let i = 0; i < chunks.length - 1; i++) {
-        await ctx.reply(chunks[i]);
+        try {
+          await ctx.reply(chunks[i], { format: 'markdown' });
+          console.log(`[generate] sent chunk ${i + 1}/${chunks.length}`);
+        } catch (chunkErr) {
+          console.error(`[generate] failed chunk ${i + 1}/${chunks.length}:`, chunkErr.message);
+        }
+        // Небольшая пауза между сообщениями — MAX может отклонять слишком быстрые отправки
+        await new Promise((r) => setTimeout(r, 800));
       }
-      await ctx.reply(chunks[chunks.length - 1] + footer, { attachments: [exitKeyboard()] });
+
+      const lastChunk = chunks[chunks.length - 1] + footer;
+      try {
+        await ctx.reply(lastChunk, { attachments: [exitKeyboard()], format: 'markdown' });
+        console.log(`[generate] sent last chunk ${chunks.length}/${chunks.length}`);
+      } catch (chunkErr) {
+        console.error(`[generate] failed last chunk:`, chunkErr.message);
+        // Попытка отправить хотя бы футер с кнопкой
+        await ctx.reply(`⚠️ Часть текста не доставлена.\n${footer}`, { attachments: [exitKeyboard()] });
+      }
     }
   } catch (err) {
     console.error('Ошибка генерации:', err.message);
