@@ -27,8 +27,8 @@ export const TIER_LIMITS = {
 export const REFERRAL_BONUS = 5;
 
 // Канал проекта
-export const CHANNEL_URL = 'https://max.ru/join/q8LXziB0BS363Fp7Ga6Jh7dQvjfg5Pxn3ZW5mdc-mrY';
-export const CHANNEL_NAME = 'Кладовая педагога | Мишка Макс';
+export const CHANNEL_URL = 'https://max.ru/channel_vospitatel_mishka_max';
+export const CHANNEL_NAME = 'Воспитатель | Детский сад | Мишка Макс';
 
 // Названия типов контента
 export const CONTENT_TYPE_LABELS = {
