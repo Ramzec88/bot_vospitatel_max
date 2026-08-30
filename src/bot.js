@@ -36,10 +36,33 @@ bot.on('message_created', async (ctx) => {
   await handleDescription(ctx);
 });
 
-// Глобальный обработчик ошибок
+// Глобальный обработчик ошибок бота (ошибки внутри обработчиков команд)
 bot.catch((err) => {
   console.error('Необработанная ошибка бота:', err);
 });
 
-bot.start();
-console.log('✅ MAX бот «Помощник воспитателя» запущен');
+// Сетевые сбои (таймауты соединения с MAX API) не должны ронять процесс —
+// иначе Railway пересоздаёт контейнер при каждом временном обрыве сети.
+process.on('unhandledRejection', (err) => {
+  console.error('⚠️ Необработанный reject (продолжаем работу):', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Необработанное исключение (продолжаем работу):', err);
+});
+
+// bot.start() держит long-polling цикл; при сетевом сбое (таймаут, разрыв
+// соединения) цикл может завершиться с исключением — перезапускаем его.
+async function startBotWithRetry() {
+  for (;;) {
+    try {
+      await bot.start();
+      console.log('✅ MAX бот «Помощник воспитателя» запущен');
+      return;
+    } catch (err) {
+      console.error('❌ Polling упал, перезапуск через 5с:', err.message);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
+}
+
+startBotWithRetry();
