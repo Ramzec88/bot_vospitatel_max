@@ -199,6 +199,16 @@ export async function getGroupExpiry(userId) {
 }
 
 /**
+ * Возвращает все user_id пользователей MAX-бота (для рассылки).
+ */
+export async function getAllUserIds() {
+  const { rows } = await pool.query(
+    "SELECT user_id FROM users WHERE platform = 'max'",
+  );
+  return rows.map((r) => r.user_id);
+}
+
+/**
  * Возвращает последние генерации для администраторов (пагинация по 20).
  */
 export async function getRecentGenerations(offset = 0, limit = 20) {

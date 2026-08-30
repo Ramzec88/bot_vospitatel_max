@@ -1,6 +1,7 @@
 import { setUserTier, setGroupTier, getUserTier, addBonusGenerations, recordReferral } from '../database/db.js';
 import { mainMenuKeyboard } from '../utils/keyboard.js';
 import { TIER_LIMITS, REFERRAL_BONUS, CHANNEL_URL, CHANNEL_NAME } from '../config.js';
+import { isValidGroupPayload } from '../utils/groupInvite.js';
 
 const WELCOME_TEXT =
 `👋 Добро пожаловать в «Помощник воспитателя»!
@@ -20,13 +21,6 @@ const PAYLOAD_TIERS = {
   premium_access: 'premium',
   free_access: 'free',
 };
-
-// Возвращает true если payload вида group_YYYY_MM и месяц совпадает с текущим
-function isValidGroupPayload(payload) {
-  const now = new Date();
-  const expected = `group_${now.getUTCFullYear()}_${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-  return payload === expected;
-}
 
 /**
  * Обрабатывает реферальный payload вида ref_USERID.

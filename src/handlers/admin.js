@@ -1,5 +1,5 @@
 import { Keyboard } from '@maxhub/max-bot-api';
-import { getAdminStats, getRecentGenerations } from '../database/db.js';
+import { getAdminStats, getRecentGenerations, getAllUserIds } from '../database/db.js';
 import { ADMIN_IDS, CONTENT_TYPE_LABELS } from '../config.js';
 import { exitKeyboard } from '../utils/keyboard.js';
 
@@ -92,6 +92,43 @@ export async function handleAdminLogs(ctx, offset) {
     }
     await ctx.reply(chunks[chunks.length - 1], { attachments: [logsKeyboard(offset)], format: 'markdown' });
   }
+}
+
+const BROADCAST_TEXT =
+  `📢 Если ссылка-приглашение в закрытую группу перестала работать (например, из-за смены месяца) — нажмите кнопку ниже, чтобы получить актуальную.`;
+
+function broadcastKeyboard() {
+  return Keyboard.inlineKeyboard([
+    [Keyboard.button.callback('🔄 Запросить новую ссылку', 'cmd:group_link')],
+  ]);
+}
+
+/**
+ * Рассылает всем пользователям сообщение о том, что делать при нерабочей ссылке.
+ * Команда /broadcast_group_link — только для администраторов.
+ */
+export async function handleBroadcastGroupLink(ctx) {
+  const userId = ctx.user?.user_id;
+  if (!adminGuard(userId)) return;
+
+  const userIds = await getAllUserIds();
+  await ctx.reply(`⏳ Рассылка запущена для ${userIds.length} пользователей...`);
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const id of userIds) {
+    try {
+      await ctx.api.sendMessageToUser(id, BROADCAST_TEXT, { attachments: [broadcastKeyboard()] });
+      sent++;
+    } catch (err) {
+      failed++;
+    }
+    // Пауза, чтобы не упереться в rate limit MAX API
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  await ctx.reply(`✅ Рассылка завершена. Доставлено: ${sent}, не доставлено: ${failed}.`);
 }
 
 function splitText(text, maxLen) {

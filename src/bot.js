@@ -4,7 +4,7 @@ import { initDatabase } from './database/db.js';
 import { handleStart, handleStartCommand, handleBotStarted } from './handlers/start.js';
 import { handleCallback, handleDescription, handleCancel } from './handlers/generate.js';
 import { handleLimits } from './handlers/limits.js';
-import { handleAnalytics } from './handlers/admin.js';
+import { handleAnalytics, handleBroadcastGroupLink } from './handlers/admin.js';
 import { checkAccess } from './middleware/checkAccess.js';
 
 // Инициализация БД перед стартом
@@ -24,6 +24,7 @@ bot.command('limits',    handleLimits);
 bot.command('referral',  handleLimits); // реферальная ссылка показывается в /limits
 bot.command('cancel',    handleCancel);
 bot.command('analytics', handleAnalytics);
+bot.command('broadcast_group_link', handleBroadcastGroupLink);
 
 // Все нажатия inline-кнопок (callback)
 // Библиотека @maxhub/max-bot-api использует событие 'message_callback'

@@ -124,6 +124,14 @@ export async function handleCallback(ctx) {
           `📣 Наш канал с педагогическими материалами:\n${CHANNEL_URL}`,
         { format: 'markdown' },
       );
+    } else if (cmd === 'group_link') {
+      const { currentGroupLink } = await import('../utils/groupInvite.js');
+      const link = currentGroupLink();
+      await ctx.reply(
+        link
+          ? `🔄 Актуальная ссылка-приглашение в закрытую группу на этот месяц:\n${link}`
+          : '⚠️ Ссылка временно недоступна. Напишите администратору.',
+      );
     }
     return;
   }
