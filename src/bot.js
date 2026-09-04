@@ -51,18 +51,29 @@ process.on('uncaughtException', (err) => {
   console.error('⚠️ Необработанное исключение (продолжаем работу):', err);
 });
 
-// bot.start() держит long-polling цикл; при сетевом сбое (таймаут, разрыв
-// соединения) цикл может завершиться с исключением — перезапускаем его.
+// bot.start() держит long-polling цикл. У библиотеки @maxhub/max-bot-api есть баг:
+// при временной сетевой ошибке (FetchError, 429, 5xx) Polling.loop делает return
+// вместо retry — цикл тихо завершается, bot.start() резолвится без исключения,
+// и бот молча перестаёт отвечать. Поэтому перезапускаем цикл при ЛЮБОМ его
+// завершении — как по исключению, так и по тихому return.
+// bot.stop() обязателен перед повторным bot.start() — иначе флаг pollingIsStarted
+// внутри библиотеки не даст циклу перезапуститься.
+let running = true;
+process.on('SIGTERM', () => { running = false; bot.stop(); });
+process.on('SIGINT', () => { running = false; bot.stop(); });
+
 async function startBotWithRetry() {
-  for (;;) {
+  console.log('✅ MAX бот «Помощник воспитателя» запущен');
+  while (running) {
     try {
       await bot.start();
-      console.log('✅ MAX бот «Помощник воспитателя» запущен');
-      return;
+      if (running) console.warn('⚠️ Polling неожиданно остановился, перезапуск через 3с...');
     } catch (err) {
-      console.error('❌ Polling упал, перезапуск через 5с:', err.message);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.error('❌ Polling упал с ошибкой, перезапуск через 3с:', err.message);
     }
+    if (!running) break;
+    bot.stop();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 }
 
