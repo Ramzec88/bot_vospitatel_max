@@ -47,7 +47,7 @@ export async function generateContent({ contentType, ageGroup, groupSize, descri
         { role: 'user', content: userMessage },
       ],
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 3000,
     },
     {
       headers: {
@@ -60,7 +60,13 @@ export async function generateContent({ contentType, ageGroup, groupSize, descri
     },
   );
 
-  const text = response.data?.choices?.[0]?.message?.content;
+  const choice = response.data?.choices?.[0];
+  const text = choice?.message?.content;
   if (!text) throw new Error('Пустой ответ от OpenRouter');
+
+  if (choice.finish_reason === 'length') {
+    console.warn(`[openrouter] ответ обрезан по лимиту max_tokens (${text.length} символов)`);
+  }
+
   return text.trim();
 }
